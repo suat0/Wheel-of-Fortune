@@ -2,6 +2,12 @@
 
 A mobile-first spin-the-wheel game built with **Unity 2021.3 LTS**. Players spin a reward wheel across progressively harder zones, collecting loot while dodging bombs.
 
+## Screenshots
+
+| 20:9 | 16:9 | 4:3 |
+|:----:|:----:|:---:|
+| ![20:9](Screenshots/gameplay_20-9.png) | ![16:9](Screenshots/gameplay_16-9.png) | ![4:3](Screenshots/gameplay_4-3.png) |
+
 ## Gameplay
 
 - Spin the wheel to win rewards (gold, weapons, chests, etc.)
