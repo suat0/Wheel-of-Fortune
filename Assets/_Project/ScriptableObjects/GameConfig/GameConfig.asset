@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56aab838cd35840d89daf53d151ebc9b, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: 
+  safeZoneInterval: 5
+  superZoneInterval: 30
+  normalWheelConfigs:
+  - {fileID: 11400000, guid: 9121b541b4aa14be59cd68069f1d1ca6, type: 2}
+  safeWheelConfig: {fileID: 11400000, guid: 212fa57ab314542aea014fed2fd11ae8, type: 2}
+  superWheelConfig: {fileID: 11400000, guid: 345669b14530049dd93107de78b2125e, type: 2}
+  rewardScaleInterval: 5
+  rewardScaleMultiplier: 1.5

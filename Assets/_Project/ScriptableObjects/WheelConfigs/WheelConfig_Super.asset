@@ -1,0 +1,62 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 358d4af8dd73c44e39221e7539ff6de1, type: 3}
+  m_Name: WheelConfig_Super
+  m_EditorClassIdentifier: 
+  displayName: Golden Spin
+  zoneType: 2
+  wheelSprite: {fileID: 21300000, guid: 84dacf9a9056f43c18791ab88a4a0d46, type: 3}
+  pointerSprite: {fileID: 21300000, guid: 53ec31c7187224bb693be0423c8d31df, type: 3}
+  rewardMultiplier: 10
+  spinDuration: 4
+  extraRotations: 7
+  slices:
+  - reward: {fileID: 11400000, guid: d1154b6329d5c45eaafd21219df0d421, type: 2}
+    amount: 100
+    isBomb: 0
+    iconOverride: {fileID: 0}
+    colorOverride: {r: 0, g: 0, b: 0, a: 0}
+  - reward: {fileID: 11400000, guid: 7acd37f81b7b64f55800d7e6ea12b627, type: 2}
+    amount: 50
+    isBomb: 0
+    iconOverride: {fileID: 0}
+    colorOverride: {r: 0, g: 0, b: 0, a: 0}
+  - reward: {fileID: 11400000, guid: 1b98763f73b3941a9bc5648dbfd3c8bf, type: 2}
+    amount: 1
+    isBomb: 0
+    iconOverride: {fileID: 0}
+    colorOverride: {r: 0, g: 0, b: 0, a: 0}
+  - reward: {fileID: 11400000, guid: d1154b6329d5c45eaafd21219df0d421, type: 2}
+    amount: 300
+    isBomb: 0
+    iconOverride: {fileID: 0}
+    colorOverride: {r: 0, g: 0, b: 0, a: 0}
+  - reward: {fileID: 11400000, guid: c3ef59dcd7ca942ea8f94b0dc1e6e61f, type: 2}
+    amount: 1
+    isBomb: 0
+    iconOverride: {fileID: 0}
+    colorOverride: {r: 0, g: 0, b: 0, a: 0}
+  - reward: {fileID: 11400000, guid: 7acd37f81b7b64f55800d7e6ea12b627, type: 2}
+    amount: 100
+    isBomb: 0
+    iconOverride: {fileID: 0}
+    colorOverride: {r: 0, g: 0, b: 0, a: 0}
+  - reward: {fileID: 11400000, guid: 52ce642d371b2424fbc33656028eb140, type: 2}
+    amount: 1
+    isBomb: 0
+    iconOverride: {fileID: 0}
+    colorOverride: {r: 0, g: 0, b: 0, a: 0}
+  - reward: {fileID: 11400000, guid: 1b98763f73b3941a9bc5648dbfd3c8bf, type: 2}
+    amount: 2
+    isBomb: 0
+    iconOverride: {fileID: 0}
+    colorOverride: {r: 0, g: 0, b: 0, a: 0}
