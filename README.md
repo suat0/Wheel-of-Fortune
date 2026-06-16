@@ -8,6 +8,10 @@ A mobile-first spin-the-wheel game built with **Unity 2021.3 LTS**. Players spin
 |:----:|:----:|:---:|
 | ![20:9](Screenshots/gameplay_20-9.png) | ![16:9](Screenshots/gameplay_16-9.png) | ![4:3](Screenshots/gameplay_4-3.png) |
 
+## Demo Video
+
+[Gameplay Video (Google Drive)](https://drive.google.com/drive/folders/1i4lF27Oa8z74OlCQTQffXoBiRtV6Ty83?usp=sharing)
+
 ## Gameplay
 
 - Spin the wheel to win rewards (gold, weapons, chests, etc.)
