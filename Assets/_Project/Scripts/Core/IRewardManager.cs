@@ -12,5 +12,6 @@ namespace VertigoCase.Core
         void AddReward(RewardData reward, int amount);
         void ClearRewards();
         IReadOnlyList<CollectedReward> GetCollectedRewards();
+        IReadOnlyList<CollectedReward> GetRewardsSnapshot();
     }
 }

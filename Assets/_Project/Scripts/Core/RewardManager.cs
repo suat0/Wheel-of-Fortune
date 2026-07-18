@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using UnityEngine;
 using VertigoCase.Data;
 
@@ -7,6 +8,7 @@ namespace VertigoCase.Core
     public class RewardManager : MonoBehaviour, IRewardManager
     {
         private readonly List<CollectedReward> collectedRewards = new List<CollectedReward>();
+        private ReadOnlyCollection<CollectedReward> readOnlyRewards;
 
         public int UniqueRewardCount => collectedRewards.Count;
         public int TotalAmount { get; private set; }
@@ -47,9 +49,23 @@ namespace VertigoCase.Core
             Debug.Log("[RewardManager] Rewards cleared.", this);
         }
 
+        /// <summary>
+        /// Live view of the current rewards. Wrapped in ReadOnlyCollection so a
+        /// caller cannot cast it back to List and mutate internal state. Note it
+        /// is still a live view: ClearRewards empties it. Use GetRewardsSnapshot
+        /// for data that must survive a clear (e.g. event payloads).
+        /// </summary>
         public IReadOnlyList<CollectedReward> GetCollectedRewards()
         {
-            return collectedRewards;
+            if (readOnlyRewards == null)
+                readOnlyRewards = collectedRewards.AsReadOnly();
+
+            return readOnlyRewards;
+        }
+
+        public IReadOnlyList<CollectedReward> GetRewardsSnapshot()
+        {
+            return collectedRewards.ToArray();
         }
 
         private CollectedReward FindReward(RewardData reward)

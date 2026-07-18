@@ -77,6 +77,14 @@ namespace VertigoCase.Data
             {
                 Debug.LogWarning($"{name} is a safe/super wheel but contains a bomb slice.", this);
             }
+
+            for (int i = 0; i < slices.Count; i++)
+            {
+                if (!slices[i].IsBomb && slices[i].Amount < 1)
+                {
+                    Debug.LogWarning($"{name} slice {i} is not a bomb but has amount {slices[i].Amount}; it would award nothing.", this);
+                }
+            }
         }
 #endif
     }

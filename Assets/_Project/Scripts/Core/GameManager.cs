@@ -8,6 +8,20 @@ namespace VertigoCase.Core
 {
     public class GameManager : MonoBehaviour
     {
+        /// <summary>
+        /// Single authority on what the player is allowed to do. Replaces the
+        /// previous scattered bool flags so UI-only guards (button interactable)
+        /// are never the last line of defense.
+        /// </summary>
+        private enum GamePhase
+        {
+            Idle,
+            Spinning,
+            Transitioning,
+            Collecting,
+            GameOver
+        }
+
         [SerializeField] private GameConfig gameConfig;
         [SerializeField] private ZoneManager zoneManager;
         [SerializeField] private RewardManager rewardManager;
@@ -25,12 +39,23 @@ namespace VertigoCase.Core
         public ZoneType CurrentZoneType => zoneManager != null ? zoneManager.CurrentZoneType : ZoneType.Normal;
         public GameConfig Config => gameConfig;
 
+        // Collect is only allowed while idle at a safe/super zone (README rule).
         public bool CanCollect =>
+            phase == GamePhase.Idle &&
             rewardManager != null &&
             rewardManager.HasRewards &&
-            !IsSpinning;
+            zoneManager != null &&
+            zoneManager.CanCollectCurrentZone;
 
-        public bool CanSpin => wheelController != null && !wheelController.IsSpinning && !isTransitioning;
+        // Intentionally does NOT check wheelController.IsTransitioning: no event
+        // fires when the wheel's visual transition ends, so disabling the button
+        // on it would leave the UI stuck. A click in that short window is instead
+        // rejected by Spin() returning false, which is a harmless no-op.
+        public bool CanSpin =>
+            phase == GamePhase.Idle &&
+            wheelController != null &&
+            wheelController.HasValidConfig &&
+            HasRequiredReferences();
 
         public IReadOnlyList<CollectedReward> CollectedRewards =>
             rewardManager != null
@@ -39,7 +64,7 @@ namespace VertigoCase.Core
 
         public bool IsSpinning => wheelController != null && wheelController.IsSpinning;
 
-        private bool isTransitioning;
+        private GamePhase phase = GamePhase.Idle;
 
         private void Awake()
         {
@@ -62,11 +87,17 @@ namespace VertigoCase.Core
 
         public void RequestSpin()
         {
-            if (!CanSpin || !HasRequiredReferences())
+            if (!CanSpin)
                 return;
 
+            // SpinStarted only fires once the wheel confirms the spin began;
+            // otherwise the UI would lock itself waiting for a completion
+            // callback that never comes.
+            if (!wheelController.Spin(HandleSpinCompleted))
+                return;
+
+            phase = GamePhase.Spinning;
             SpinStarted?.Invoke();
-            wheelController.Spin(HandleSpinCompleted);
         }
 
         public void CollectRewards()
@@ -74,7 +105,8 @@ namespace VertigoCase.Core
             if (!CanCollect)
                 return;
 
-            RewardsCollected?.Invoke(rewardManager.GetCollectedRewards());
+            phase = GamePhase.Collecting;
+            RewardsCollected?.Invoke(rewardManager.GetRewardsSnapshot());
         }
 
         public void RestartGame()
@@ -83,7 +115,7 @@ namespace VertigoCase.Core
                 return;
 
             StopAllCoroutines();
-            isTransitioning = false;
+            phase = GamePhase.Idle;
 
             zoneManager.ResetZone();
             rewardManager.ClearRewards();
@@ -109,11 +141,14 @@ namespace VertigoCase.Core
 
         private void HandleSpinCompleted(WheelSpinResult result)
         {
-            if (!HasRequiredReferences())
+            // isActiveAndEnabled: a completed-on-disable spin (scene teardown)
+            // must not try to start coroutines on an inactive object.
+            if (!isActiveAndEnabled || !HasRequiredReferences())
                 return;
 
             if (result.IsBomb)
             {
+                phase = GamePhase.GameOver;
                 rewardManager.ClearRewards();
                 SpinCompleted?.Invoke(result);
                 BombHit?.Invoke();
@@ -125,7 +160,7 @@ namespace VertigoCase.Core
                 rewardManager.AddReward(result.Reward, result.Amount);
             }
 
-            isTransitioning = true;
+            phase = GamePhase.Transitioning;
             SpinCompleted?.Invoke(result);
             StartCoroutine(TransitionToNextZone());
         }
@@ -137,7 +172,7 @@ namespace VertigoCase.Core
 
             zoneManager.AdvanceZone();
             ConfigureWheelForCurrentZone(true);
-            isTransitioning = false;
+            phase = GamePhase.Idle;
             ZoneChanged?.Invoke(CurrentZone, CurrentZoneType);
         }
 

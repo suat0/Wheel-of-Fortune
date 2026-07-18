@@ -15,12 +15,14 @@ namespace VertigoCase.Core
 
         private WheelConfig currentWheelConfig;
         private int currentZoneRewardMultiplier = 1;
-        private Tweener spinTween;
+        private Tween spinTween;
         private Sequence transitionSequence;
         private readonly List<WheelSliceView> activeSlices = new List<WheelSliceView>();
 
         public bool IsSpinning => spinTween != null && spinTween.IsActive() && spinTween.IsPlaying();
         public bool IsTransitioning => transitionSequence != null && transitionSequence.IsActive() && transitionSequence.IsPlaying();
+        public bool HasValidConfig => currentWheelConfig != null && currentWheelConfig.SliceCount > 0;
+        public bool CanSpin => !IsSpinning && !IsTransitioning && HasValidConfig;
         public WheelSpinResult LastResult { get; private set; }
 
         public void Configure(WheelConfig wheelConfig, int zoneRewardMultiplier)
@@ -28,9 +30,15 @@ namespace VertigoCase.Core
             currentWheelConfig = wheelConfig;
             currentZoneRewardMultiplier = Mathf.Max(1, zoneRewardMultiplier);
 
+            KillActiveTween();
+
+            if (wheelTransform != null)
+                wheelTransform.localRotation = Quaternion.identity;
+
             if (currentWheelConfig == null)
             {
                 Debug.LogError("[WheelController] WheelConfig is null.", this);
+                RebuildSlices();
                 return;
             }
 
@@ -39,17 +47,15 @@ namespace VertigoCase.Core
                 Debug.LogError($"[WheelController] {currentWheelConfig.name} is {currentWheelConfig.ZoneType} but contains a bomb.", this);
             }
 
-            KillActiveTween();
-
-            if (wheelTransform != null)
-                wheelTransform.localRotation = Quaternion.identity;
-
             RebuildSlices();
         }
 
         public void ConfigureWithTransition(WheelConfig wheelConfig, int zoneRewardMultiplier)
         {
-            KillTransition();
+            // Complete any previous transition so its pending Configure callback
+            // still runs — otherwise the wheel could stay on the old zone's
+            // config while the game has already advanced.
+            KillTransition(complete: true);
 
             if (wheelTransform == null)
             {
@@ -68,27 +74,38 @@ namespace VertigoCase.Core
                 .OnComplete(() => transitionSequence = null);
         }
 
-        public void Spin(Action<WheelSpinResult> onCompleted)
+        /// <summary>
+        /// Starts a spin. Returns false when the spin could not start (already
+        /// spinning, mid-transition, or no valid config) so the caller never
+        /// waits for a completion callback that will not come.
+        /// </summary>
+        public bool Spin(Action<WheelSpinResult> onCompleted)
         {
-            if (IsSpinning || IsTransitioning)
-                return;
-
-            if (currentWheelConfig == null)
+            if (!HasValidConfig)
             {
-                Debug.LogError("[WheelController] Configure must be called before Spin.", this);
-                return;
+                Debug.LogError("[WheelController] Configure must be called with a valid config before Spin.", this);
+                return false;
             }
+
+            if (IsSpinning || IsTransitioning)
+                return false;
 
             int resultIndex = WheelResultResolver.GetRandomSliceIndex(currentWheelConfig);
             if (!WheelResultResolver.TryResolve(currentWheelConfig, currentZoneRewardMultiplier, resultIndex, out WheelSpinResult result))
-                return;
+                return false;
 
             LastResult = result;
 
             if (wheelTransform == null)
             {
-                onCompleted?.Invoke(result);
-                return;
+                // Deferred one frame so the completion callback never fires
+                // before the caller has processed the fact that the spin started.
+                spinTween = DOVirtual.DelayedCall(0f, () =>
+                {
+                    spinTween = null;
+                    onCompleted?.Invoke(result);
+                });
+                return true;
             }
 
             float targetAngle = CalculateTargetAngle(currentWheelConfig, result.SliceIndex);
@@ -101,6 +118,7 @@ namespace VertigoCase.Core
                     spinTween = null;
                     onCompleted?.Invoke(result);
                 });
+            return true;
         }
 
         [ContextMenu("Test Spin Current Config")]
@@ -137,9 +155,8 @@ namespace VertigoCase.Core
             {
                 WheelSliceConfig sliceConfig = currentWheelConfig.Slices[i];
                 WheelSliceView sliceView = Instantiate(slicePrefab, sliceContainer);
-                int displayAmount = sliceConfig.IsBomb
-                    ? 0
-                    : sliceConfig.Amount * currentZoneRewardMultiplier * Mathf.Max(1, currentWheelConfig.RewardMultiplier);
+                int displayAmount = WheelResultResolver.GetSliceAmount(
+                    sliceConfig, currentZoneRewardMultiplier, currentWheelConfig.RewardMultiplier);
 
                 sliceView.Setup(sliceConfig, displayAmount, i * currentWheelConfig.SliceAngle);
                 activeSlices.Add(sliceView);
@@ -157,22 +174,27 @@ namespace VertigoCase.Core
             activeSlices.Clear();
         }
 
-        private void KillActiveTween()
+        // complete=true finishes the tween instantly (invoking its callback)
+        // instead of cancelling it. Used on disable so a mid-spin result is
+        // never silently swallowed; Configure/restart paths cancel on purpose.
+        private void KillActiveTween(bool complete = false)
         {
             if (spinTween != null && spinTween.IsActive())
             {
-                spinTween.Kill();
-                spinTween = null;
+                spinTween.Kill(complete);
             }
+
+            spinTween = null;
         }
 
-        private void KillTransition()
+        private void KillTransition(bool complete = false)
         {
             if (transitionSequence != null && transitionSequence.IsActive())
             {
-                transitionSequence.Kill();
-                transitionSequence = null;
+                transitionSequence.Kill(complete);
             }
+
+            transitionSequence = null;
 
             if (wheelTransform != null)
                 wheelTransform.localScale = Vector3.one;
@@ -180,8 +202,8 @@ namespace VertigoCase.Core
 
         private void OnDisable()
         {
-            KillActiveTween();
-            KillTransition();
+            KillActiveTween(complete: true);
+            KillTransition(complete: true);
         }
 
         private void OnDestroy()

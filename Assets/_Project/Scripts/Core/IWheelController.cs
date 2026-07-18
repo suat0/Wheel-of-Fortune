@@ -7,10 +7,12 @@ namespace VertigoCase.Core
     {
         bool IsSpinning { get; }
         bool IsTransitioning { get; }
+        bool HasValidConfig { get; }
+        bool CanSpin { get; }
         WheelSpinResult LastResult { get; }
 
         void Configure(WheelConfig wheelConfig, int zoneRewardMultiplier);
         void ConfigureWithTransition(WheelConfig wheelConfig, int zoneRewardMultiplier);
-        void Spin(Action<WheelSpinResult> onCompleted);
+        bool Spin(Action<WheelSpinResult> onCompleted);
     }
 }

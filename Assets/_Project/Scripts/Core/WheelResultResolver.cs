@@ -5,6 +5,19 @@ namespace VertigoCase.Core
 {
     public static class WheelResultResolver
     {
+        /// <summary>
+        /// Single source of truth for the reward amount formula. Both the actual
+        /// spin result and the amounts displayed on the wheel slices must go
+        /// through here so they can never drift apart.
+        /// </summary>
+        public static int GetSliceAmount(WheelSliceConfig slice, int zoneRewardMultiplier, int wheelRewardMultiplier)
+        {
+            if (slice == null || slice.IsBomb)
+                return 0;
+
+            return slice.Amount * Mathf.Max(1, zoneRewardMultiplier) * Mathf.Max(1, wheelRewardMultiplier);
+        }
+
         public static int GetRandomSliceIndex(WheelConfig wheelConfig)
         {
             if (wheelConfig == null || wheelConfig.SliceCount == 0)
@@ -38,7 +51,7 @@ namespace VertigoCase.Core
             WheelSliceConfig slice = wheelConfig.Slices[sliceIndex];
             int safeZoneMultiplier = Mathf.Max(1, zoneRewardMultiplier);
             int wheelMultiplier = Mathf.Max(1, wheelConfig.RewardMultiplier);
-            int amount = slice.IsBomb ? 0 : slice.Amount * safeZoneMultiplier * wheelMultiplier;
+            int amount = GetSliceAmount(slice, safeZoneMultiplier, wheelMultiplier);
 
             result = new WheelSpinResult(
                 sliceIndex,
