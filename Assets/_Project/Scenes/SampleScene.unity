@@ -1047,7 +1047,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   background: {fileID: 425426117}
-  valueText: {fileID: 555000004}
+  valueText: {fileID: 445627207}
   targetType: 1
   activeColor: {r: 0.12, g: 0.82, b: 0.08, a: 0.95}
   inactiveColor: {r: 0.05, g: 0.43, b: 0.04, a: 0.86}
@@ -3790,7 +3790,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   background: {fileID: 1885307195}
-  valueText: {fileID: 555000008}
+  valueText: {fileID: 1895883730}
   targetType: 2
   activeColor: {r: 0.95, g: 0.62, b: 0.04, a: 0.96}
   inactiveColor: {r: 0.72, g: 0.43, b: 0.02, a: 0.86}

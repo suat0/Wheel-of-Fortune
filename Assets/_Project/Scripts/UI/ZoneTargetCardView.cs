@@ -51,8 +51,9 @@ namespace VertigoCase.UI
         {
             if (background == null)
                 background = GetComponent<Image>();
-            if (valueText == null)
-                valueText = GetComponentInChildren<TextMeshProUGUI>(true);
+            // valueText is intentionally not auto-grabbed: the card has both a
+            // label and a value text, and GetComponentInChildren would pick
+            // whichever comes first. The setup menu wires it by name instead.
         }
 #endif
     }

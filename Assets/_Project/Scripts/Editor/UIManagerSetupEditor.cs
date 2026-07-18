@@ -144,7 +144,9 @@ namespace VertigoCase.EditorTools
 
             SerializedObject so = new SerializedObject(card);
             SetRefIfNull(so, "background", card.GetComponent<Image>());
-            SetRefIfNull(so, "valueText", FindComponentByName<TextMeshProUGUI>(valueTextName));
+            // Always overwrite: the card holds both a label and a value text,
+            // so an accidental wrong reference must self-heal on re-run.
+            SetRef(so, "valueText", FindComponentByName<TextMeshProUGUI>(valueTextName));
             so.FindProperty("targetType").enumValueIndex = (int)targetType;
             so.FindProperty("activeColor").colorValue = activeColor;
             so.FindProperty("inactiveColor").colorValue = inactiveColor;
@@ -200,6 +202,19 @@ namespace VertigoCase.EditorTools
         private static RectTransform FirstChildRect(Transform parent)
         {
             return parent.childCount > 0 ? parent.GetChild(0) as RectTransform : null;
+        }
+
+        private static void SetRef(SerializedObject so, string propertyName, Object value)
+        {
+            SerializedProperty prop = so.FindProperty(propertyName);
+            if (prop == null)
+            {
+                Debug.LogWarning($"[UIManagerSetup] Property {propertyName} not found on {so.targetObject.name}.");
+                return;
+            }
+
+            if (value != null)
+                prop.objectReferenceValue = value;
         }
 
         private static void SetRefIfNull(SerializedObject so, string propertyName, Object value)
