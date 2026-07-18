@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using VertigoCase.Core.Events;
 using VertigoCase.Data;
 
 namespace VertigoCase.Core
@@ -27,13 +28,6 @@ namespace VertigoCase.Core
         [SerializeField] private RewardManager rewardManager;
         [SerializeField] private WheelController wheelController;
         [SerializeField, Min(0f)] private float zoneTransitionDelay = 0.4f;
-
-        public event Action<int, ZoneType> ZoneChanged;
-        public event Action SpinStarted;
-        public event Action<WheelSpinResult> SpinCompleted;
-        public event Action BombHit;
-        public event Action<IReadOnlyList<CollectedReward>> RewardsCollected;
-        public event Action GameRestarted;
 
         public int CurrentZone => zoneManager != null ? zoneManager.CurrentZone : 0;
         public ZoneType CurrentZoneType => zoneManager != null ? zoneManager.CurrentZoneType : ZoneType.Normal;
@@ -82,7 +76,7 @@ namespace VertigoCase.Core
         private void Start()
         {
             ConfigureWheelForCurrentZone();
-            ZoneChanged?.Invoke(CurrentZone, CurrentZoneType);
+            EventBus.Raise(new ZoneChangedEvent(CurrentZone, CurrentZoneType));
         }
 
         public void RequestSpin()
@@ -97,7 +91,7 @@ namespace VertigoCase.Core
                 return;
 
             phase = GamePhase.Spinning;
-            SpinStarted?.Invoke();
+            EventBus.Raise(new SpinStartedEvent());
         }
 
         public void CollectRewards()
@@ -106,7 +100,7 @@ namespace VertigoCase.Core
                 return;
 
             phase = GamePhase.Collecting;
-            RewardsCollected?.Invoke(rewardManager.GetRewardsSnapshot());
+            EventBus.Raise(new RewardsCollectedEvent(rewardManager.GetRewardsSnapshot()));
         }
 
         public void RestartGame()
@@ -119,10 +113,10 @@ namespace VertigoCase.Core
 
             zoneManager.ResetZone();
             rewardManager.ClearRewards();
-            GameRestarted?.Invoke();
+            EventBus.Raise(new GameRestartedEvent());
 
             ConfigureWheelForCurrentZone();
-            ZoneChanged?.Invoke(CurrentZone, CurrentZoneType);
+            EventBus.Raise(new ZoneChangedEvent(CurrentZone, CurrentZoneType));
         }
 
         public WheelConfig GetCurrentWheelConfig()
@@ -150,8 +144,8 @@ namespace VertigoCase.Core
             {
                 phase = GamePhase.GameOver;
                 rewardManager.ClearRewards();
-                SpinCompleted?.Invoke(result);
-                BombHit?.Invoke();
+                EventBus.Raise(new SpinCompletedEvent(result));
+                EventBus.Raise(new BombHitEvent());
                 return;
             }
 
@@ -161,7 +155,7 @@ namespace VertigoCase.Core
             }
 
             phase = GamePhase.Transitioning;
-            SpinCompleted?.Invoke(result);
+            EventBus.Raise(new SpinCompletedEvent(result));
             StartCoroutine(TransitionToNextZone());
         }
 
@@ -173,7 +167,7 @@ namespace VertigoCase.Core
             zoneManager.AdvanceZone();
             ConfigureWheelForCurrentZone(true);
             phase = GamePhase.Idle;
-            ZoneChanged?.Invoke(CurrentZone, CurrentZoneType);
+            EventBus.Raise(new ZoneChangedEvent(CurrentZone, CurrentZoneType));
         }
 
         private void ConfigureWheelForCurrentZone(bool animate = false)

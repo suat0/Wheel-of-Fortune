@@ -37,8 +37,10 @@ Assets/_Project/
 ```
 
 **Key design decisions:**
-- All game data is driven by **ScriptableObjects** — zone rules, wheel layouts, and rewards are fully configurable without code changes
-- Event-driven architecture — `GameManager` exposes events (`ZoneChanged`, `SpinCompleted`, `BombHit`, etc.) that the UI layer subscribes to
+- All game data is driven by **ScriptableObjects** — zone rules, wheel layouts, rewards, UI texts, and theme colors are fully configurable without code changes
+- Event-driven architecture — gameplay raises typed events (`ZoneChangedEvent`, `SpinCompletedEvent`, `BombHitEvent`, etc.) through a lightweight **EventBus**; the UI layer subscribes without referencing gameplay code
+- `GameManager` runs an explicit game-phase state machine (Idle / Spinning / Transitioning / Collecting / GameOver) — UI button states are a projection of it, never the source of truth
+- Pooled UI: wheel slices, zone indicators, and reward entries are reused instead of destroyed/instantiated per spin
 - Wheel spin animations powered by **DOTween**
 - Zone type logic is interval-based: safe every N zones, super every M zones (configurable)
 

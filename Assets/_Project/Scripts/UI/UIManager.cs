@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using UnityEngine;
 using VertigoCase.Core;
+using VertigoCase.Core.Events;
 using VertigoCase.Data;
 
 namespace VertigoCase.UI
@@ -32,15 +32,12 @@ namespace VertigoCase.UI
 
         private void OnEnable()
         {
-            if (gameManager != null)
-            {
-                gameManager.ZoneChanged += OnZoneChanged;
-                gameManager.SpinStarted += OnSpinStarted;
-                gameManager.SpinCompleted += OnSpinCompleted;
-                gameManager.BombHit += OnBombHit;
-                gameManager.RewardsCollected += OnRewardsCollected;
-                gameManager.GameRestarted += OnGameRestarted;
-            }
+            EventBus.Subscribe<ZoneChangedEvent>(OnZoneChanged);
+            EventBus.Subscribe<SpinStartedEvent>(OnSpinStarted);
+            EventBus.Subscribe<SpinCompletedEvent>(OnSpinCompleted);
+            EventBus.Subscribe<BombHitEvent>(OnBombHit);
+            EventBus.Subscribe<RewardsCollectedEvent>(OnRewardsCollected);
+            EventBus.Subscribe<GameRestartedEvent>(OnGameRestarted);
 
             if (spinButton != null)
                 spinButton.Clicked += OnSpinClicked;
@@ -50,15 +47,12 @@ namespace VertigoCase.UI
 
         private void OnDisable()
         {
-            if (gameManager != null)
-            {
-                gameManager.ZoneChanged -= OnZoneChanged;
-                gameManager.SpinStarted -= OnSpinStarted;
-                gameManager.SpinCompleted -= OnSpinCompleted;
-                gameManager.BombHit -= OnBombHit;
-                gameManager.RewardsCollected -= OnRewardsCollected;
-                gameManager.GameRestarted -= OnGameRestarted;
-            }
+            EventBus.Unsubscribe<ZoneChangedEvent>(OnZoneChanged);
+            EventBus.Unsubscribe<SpinStartedEvent>(OnSpinStarted);
+            EventBus.Unsubscribe<SpinCompletedEvent>(OnSpinCompleted);
+            EventBus.Unsubscribe<BombHitEvent>(OnBombHit);
+            EventBus.Unsubscribe<RewardsCollectedEvent>(OnRewardsCollected);
+            EventBus.Unsubscribe<GameRestartedEvent>(OnGameRestarted);
 
             if (spinButton != null)
                 spinButton.Clicked -= OnSpinClicked;
@@ -78,7 +72,7 @@ namespace VertigoCase.UI
                 gameManager.CollectRewards();
         }
 
-        private void OnZoneChanged(int zone, ZoneType zoneType)
+        private void OnZoneChanged(ZoneChangedEvent evt)
         {
             WheelConfig wheelConfig = gameManager != null ? gameManager.GetCurrentWheelConfig() : null;
 
@@ -89,16 +83,16 @@ namespace VertigoCase.UI
                 rewardHint.Show(wheelConfig.RewardMultiplier * gameManager.GetCurrentZoneMultiplier());
 
             if (background != null)
-                background.ApplyZone(zoneType);
+                background.ApplyZone(evt.ZoneType);
 
             if (zoneIndicator != null)
-                zoneIndicator.UpdateZone(zone);
+                zoneIndicator.UpdateZone(evt.Zone);
 
-            UpdateZoneTargetCards(zone, zoneType);
+            UpdateZoneTargetCards(evt.Zone, evt.ZoneType);
             UpdateButtonStates();
         }
 
-        private void OnSpinStarted()
+        private void OnSpinStarted(SpinStartedEvent evt)
         {
             if (spinButton != null)
             {
@@ -110,24 +104,24 @@ namespace VertigoCase.UI
                 collectButton.SetVisible(false);
         }
 
-        private void OnSpinCompleted(WheelSpinResult result)
+        private void OnSpinCompleted(SpinCompletedEvent evt)
         {
             if (wheelVisuals != null)
                 wheelVisuals.PlayResultFeedback();
 
-            if (result.IsBomb)
+            if (evt.Result.IsBomb)
                 return;
 
             if (rewardDisplay != null)
             {
-                rewardDisplay.Refresh(gameManager.CollectedRewards, result.Reward);
+                rewardDisplay.Refresh(gameManager.CollectedRewards, evt.Result.Reward);
                 rewardDisplay.PlayGainFeedback();
             }
 
             UpdateButtonStates();
         }
 
-        private void OnBombHit()
+        private void OnBombHit(BombHitEvent evt)
         {
             if (rewardDisplay != null)
                 rewardDisplay.Clear();
@@ -139,13 +133,13 @@ namespace VertigoCase.UI
                 gameOverPanel.Show(OnRestartRequested);
         }
 
-        private void OnRewardsCollected(IReadOnlyList<CollectedReward> rewards)
+        private void OnRewardsCollected(RewardsCollectedEvent evt)
         {
             if (collectPanel != null)
-                collectPanel.Show(rewards, OnRestartRequested);
+                collectPanel.Show(evt.Rewards, OnRestartRequested);
         }
 
-        private void OnGameRestarted()
+        private void OnGameRestarted(GameRestartedEvent evt)
         {
             if (gameOverPanel != null)
                 gameOverPanel.Hide();
