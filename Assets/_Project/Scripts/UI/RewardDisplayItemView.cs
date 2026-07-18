@@ -21,22 +21,19 @@ namespace VertigoCase.UI
                 ui_image_reward_icon_value.sprite = reward.Reward.Icon;
                 ui_image_reward_icon_value.enabled = reward.Reward.Icon != null;
                 ui_image_reward_icon_value.preserveAspect = true;
-                ui_image_reward_icon_value.raycastTarget = false;
-                ui_image_reward_icon_value.maskable = false;
+                UIGraphicUtility.MakeNonInteractive(ui_image_reward_icon_value);
             }
 
             if (ui_text_reward_name_value != null)
             {
                 ui_text_reward_name_value.text = reward.Reward.DisplayName;
-                ui_text_reward_name_value.raycastTarget = false;
-                ui_text_reward_name_value.maskable = false;
+                UIGraphicUtility.MakeNonInteractive(ui_text_reward_name_value);
             }
 
             if (ui_text_reward_amount_value != null)
             {
                 ui_text_reward_amount_value.text = $"x{reward.Amount}";
-                ui_text_reward_amount_value.raycastTarget = false;
-                ui_text_reward_amount_value.maskable = false;
+                UIGraphicUtility.MakeNonInteractive(ui_text_reward_amount_value);
             }
         }
 
@@ -46,31 +43,9 @@ namespace VertigoCase.UI
             if (ui_image_reward_icon_value == null)
                 ui_image_reward_icon_value = GetComponentInChildren<Image>();
 
-            AutoDisableImage(ui_image_reward_icon_value);
-            AutoDisableText(ui_text_reward_name_value);
-            AutoDisableText(ui_text_reward_amount_value);
-        }
-
-        private static void AutoDisableImage(Image image)
-        {
-            if (image == null)
-            {
-                return;
-            }
-
-            image.raycastTarget = false;
-            image.maskable = false;
-        }
-
-        private static void AutoDisableText(TextMeshProUGUI text)
-        {
-            if (text == null)
-            {
-                return;
-            }
-
-            text.raycastTarget = false;
-            text.maskable = false;
+            UIGraphicUtility.MakeNonInteractive(ui_image_reward_icon_value);
+            UIGraphicUtility.MakeNonInteractive(ui_text_reward_name_value);
+            UIGraphicUtility.MakeNonInteractive(ui_text_reward_amount_value);
         }
 #endif
     }

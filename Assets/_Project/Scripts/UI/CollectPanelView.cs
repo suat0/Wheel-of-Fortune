@@ -5,64 +5,60 @@ using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
 using VertigoCase.Core;
+using VertigoCase.Data;
 
 namespace VertigoCase.UI
 {
-    [RequireComponent(typeof(CanvasGroup))]
-    public class CollectPanelView : MonoBehaviour
+    public class CollectPanelView : AnimatedPanelView
     {
-        [SerializeField] private Button ui_button_collect_confirm;
-        [SerializeField] private TextMeshProUGUI ui_text_collect_title_value;
+        private const string DefaultTitle = "COLLECTED!";
+
+        [SerializeField] private Button confirmButton;
+        [SerializeField] private TextMeshProUGUI titleText;
         [SerializeField] private RewardDisplayView rewardSummary;
+        [SerializeField] private UITextConfig textConfig;
 
         private Action onConfirmCallback;
-        private CanvasGroup canvasGroup;
-        private Sequence showSequence;
 
-        private void Awake()
+        protected override void Awake()
         {
-            canvasGroup = GetComponent<CanvasGroup>();
+            base.Awake();
 
-            if (ui_button_collect_confirm != null)
-                ui_button_collect_confirm.onClick.AddListener(OnConfirmClicked);
+            if (confirmButton != null)
+                confirmButton.onClick.AddListener(OnConfirmClicked);
         }
 
         public void Show(IReadOnlyList<CollectedReward> rewards, Action onConfirm)
         {
-            KillSequence();
             onConfirmCallback = onConfirm;
-            gameObject.SetActive(true);
+            BeginShow();
 
-            if (ui_text_collect_title_value != null)
-                ui_text_collect_title_value.text = "COLLECTED!";
+            if (titleText != null)
+                titleText.text = textConfig != null ? textConfig.CollectTitle : DefaultTitle;
 
             if (rewardSummary != null)
                 rewardSummary.Refresh(rewards);
 
-            canvasGroup.alpha = 0f;
+            ShowSequence.Append(CanvasGroup.DOFade(1f, 0.3f));
 
-            showSequence = DOTween.Sequence();
-            showSequence.Append(canvasGroup.DOFade(1f, 0.3f));
-
-            if (transform.childCount > 0)
+            RectTransform content = Content;
+            if (content != null)
             {
-                Transform content = transform.GetChild(0);
                 content.localScale = Vector3.one * 0.5f;
-                showSequence.Join(content.DOScale(1f, 0.4f).SetEase(Ease.OutBack));
+                ShowSequence.Join(content.DOScale(1f, 0.4f).SetEase(Ease.OutBack));
             }
 
-            if (ui_text_collect_title_value != null)
+            if (titleText != null)
             {
-                showSequence.Append(
-                    ui_text_collect_title_value.transform.DOPunchScale(Vector3.one * 0.2f, 0.3f, 6, 0.5f)
+                ShowSequence.Append(
+                    titleText.transform.DOPunchScale(Vector3.one * 0.2f, 0.3f, 6, 0.5f)
                 );
             }
         }
 
-        public void Hide()
+        public override void Hide()
         {
-            KillSequence();
-            gameObject.SetActive(false);
+            base.Hide();
             onConfirmCallback = null;
 
             if (rewardSummary != null)
@@ -74,25 +70,11 @@ namespace VertigoCase.UI
             onConfirmCallback?.Invoke();
         }
 
-        private void KillSequence()
-        {
-            if (showSequence != null && showSequence.IsActive())
-            {
-                showSequence.Kill(true);
-                showSequence = null;
-            }
-        }
-
-        private void OnDestroy()
-        {
-            KillSequence();
-        }
-
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (ui_button_collect_confirm == null)
-                ui_button_collect_confirm = GetComponentInChildren<Button>(true);
+            if (confirmButton == null)
+                confirmButton = GetComponentInChildren<Button>(true);
         }
 #endif
     }

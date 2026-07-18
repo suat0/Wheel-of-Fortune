@@ -29,15 +29,13 @@ namespace VertigoCase.UI
             if (ui_text_zone_number_value != null)
             {
                 ui_text_zone_number_value.text = zoneNumber.ToString();
-                ui_text_zone_number_value.raycastTarget = false;
-                ui_text_zone_number_value.maskable = false;
+                UIGraphicUtility.MakeNonInteractive(ui_text_zone_number_value);
             }
 
             if (ui_image_zone_bg_value == null)
                 return;
 
-            ui_image_zone_bg_value.raycastTarget = false;
-            ui_image_zone_bg_value.maskable = false;
+            UIGraphicUtility.MakeNonInteractive(ui_image_zone_bg_value);
 
             if (isCurrent)
             {
@@ -77,30 +75,8 @@ namespace VertigoCase.UI
             if (ui_text_zone_number_value == null)
                 ui_text_zone_number_value = GetComponentInChildren<TextMeshProUGUI>();
 
-            AutoDisableImage(ui_image_zone_bg_value);
-            AutoDisableText(ui_text_zone_number_value);
-        }
-
-        private static void AutoDisableImage(Image image)
-        {
-            if (image == null)
-            {
-                return;
-            }
-
-            image.raycastTarget = false;
-            image.maskable = false;
-        }
-
-        private static void AutoDisableText(TextMeshProUGUI text)
-        {
-            if (text == null)
-            {
-                return;
-            }
-
-            text.raycastTarget = false;
-            text.maskable = false;
+            UIGraphicUtility.MakeNonInteractive(ui_image_zone_bg_value);
+            UIGraphicUtility.MakeNonInteractive(ui_text_zone_number_value);
         }
 #endif
     }
