@@ -17,7 +17,10 @@ namespace VertigoCase.Core
         private int currentZoneRewardMultiplier = 1;
         private Tween spinTween;
         private Sequence transitionSequence;
-        private readonly List<WheelSliceView> activeSlices = new List<WheelSliceView>();
+        // Pooled slice views: instances are reused between zone configs instead
+        // of being destroyed/instantiated on every transition (mobile GC/canvas
+        // rebuild cost). Extra instances are deactivated, never destroyed.
+        private readonly List<WheelSliceView> slicePool = new List<WheelSliceView>();
 
         public bool IsSpinning => spinTween != null && spinTween.IsActive() && spinTween.IsPlaying();
         public bool IsTransitioning => transitionSequence != null && transitionSequence.IsActive() && transitionSequence.IsPlaying();
@@ -146,32 +149,41 @@ namespace VertigoCase.Core
 
         private void RebuildSlices()
         {
-            ClearSlices();
+            int needed = currentWheelConfig == null || sliceContainer == null || slicePrefab == null
+                ? 0
+                : currentWheelConfig.SliceCount;
 
-            if (currentWheelConfig == null || sliceContainer == null || slicePrefab == null)
-                return;
+            while (slicePool.Count < needed)
+                slicePool.Add(Instantiate(slicePrefab, sliceContainer));
 
-            for (int i = 0; i < currentWheelConfig.SliceCount; i++)
+            for (int i = 0; i < slicePool.Count; i++)
             {
+                WheelSliceView sliceView = slicePool[i];
+                if (sliceView == null)
+                    continue;
+
+                bool inUse = i < needed;
+                sliceView.gameObject.SetActive(inUse);
+                if (!inUse)
+                    continue;
+
                 WheelSliceConfig sliceConfig = currentWheelConfig.Slices[i];
-                WheelSliceView sliceView = Instantiate(slicePrefab, sliceContainer);
                 int displayAmount = WheelResultResolver.GetSliceAmount(
                     sliceConfig, currentZoneRewardMultiplier, currentWheelConfig.RewardMultiplier);
 
                 sliceView.Setup(sliceConfig, displayAmount, i * currentWheelConfig.SliceAngle);
-                activeSlices.Add(sliceView);
             }
         }
 
         private void ClearSlices()
         {
-            for (int i = 0; i < activeSlices.Count; i++)
+            for (int i = 0; i < slicePool.Count; i++)
             {
-                if (activeSlices[i] != null)
-                    Destroy(activeSlices[i].gameObject);
+                if (slicePool[i] != null)
+                    Destroy(slicePool[i].gameObject);
             }
 
-            activeSlices.Clear();
+            slicePool.Clear();
         }
 
         // complete=true finishes the tween instantly (invoking its callback)

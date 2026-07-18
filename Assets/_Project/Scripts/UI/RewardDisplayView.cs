@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using VertigoCase.Core;
+using VertigoCase.Data;
 
 namespace VertigoCase.UI
 {
@@ -10,49 +11,68 @@ namespace VertigoCase.UI
         [SerializeField] private RewardDisplayItemView itemPrefab;
         [SerializeField] private RectTransform itemContainer;
 
-        private readonly List<RewardDisplayItemView> activeItems = new List<RewardDisplayItemView>();
+        // Pooled items: reused between refreshes, extras are deactivated.
+        private readonly List<RewardDisplayItemView> itemPool = new List<RewardDisplayItemView>();
 
-        public void Refresh(IReadOnlyList<CollectedReward> rewards)
+        /// <summary>
+        /// Rebuilds the list. When highlightReward is set, the entry for that
+        /// reward gets the pop-in animation — not blindly the last entry, since
+        /// stacking onto an existing reward updates it in place.
+        /// </summary>
+        public void Refresh(IReadOnlyList<CollectedReward> rewards, RewardData highlightReward = null)
         {
-            ClearItems();
-
-            if (itemPrefab == null || itemContainer == null || rewards == null)
+            if (itemPrefab == null || itemContainer == null)
                 return;
 
-            for (int i = 0; i < rewards.Count; i++)
-            {
-                RewardDisplayItemView item = Instantiate(itemPrefab, itemContainer);
-                item.Setup(rewards[i]);
-                activeItems.Add(item);
+            int needed = rewards != null ? rewards.Count : 0;
 
-                bool isLast = i == rewards.Count - 1;
-                if (isLast)
+            while (itemPool.Count < needed)
+                itemPool.Add(Instantiate(itemPrefab, itemContainer));
+
+            for (int i = 0; i < itemPool.Count; i++)
+            {
+                RewardDisplayItemView item = itemPool[i];
+                if (item == null)
+                    continue;
+
+                item.transform.DOKill();
+                item.transform.localScale = Vector3.one;
+
+                bool inUse = i < needed;
+                item.gameObject.SetActive(inUse);
+                if (!inUse)
+                    continue;
+
+                item.Setup(rewards[i]);
+
+                if (highlightReward != null && rewards[i].Reward == highlightReward)
                 {
                     item.transform.localScale = Vector3.zero;
-                    item.transform.DOScale(Vector3.one, 0.3f).SetEase(Ease.OutBack);
+                    item.transform.DOScale(Vector3.one, 0.3f)
+                        .SetEase(Ease.OutBack)
+                        .SetLink(item.gameObject);
                 }
             }
         }
 
+        public void PlayGainFeedback()
+        {
+            transform.DOKill();
+            transform.localScale = Vector3.one;
+            transform.DOPunchScale(Vector3.one * 0.1f, 0.25f, 5, 0.4f)
+                .SetLink(gameObject);
+        }
+
         public void Clear()
         {
-            ClearItems();
-        }
-
-        private void ClearItems()
-        {
-            for (int i = 0; i < activeItems.Count; i++)
+            for (int i = 0; i < itemPool.Count; i++)
             {
-                if (activeItems[i] != null)
-                    Destroy(activeItems[i].gameObject);
+                if (itemPool[i] == null)
+                    continue;
+
+                itemPool[i].transform.DOKill();
+                itemPool[i].gameObject.SetActive(false);
             }
-
-            activeItems.Clear();
-        }
-
-        private void OnDestroy()
-        {
-            ClearItems();
         }
     }
 }
